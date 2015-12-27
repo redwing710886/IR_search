@@ -14,8 +14,32 @@ class Analysis:
         self.read_dictionary()
     
     def read_dictionary(self):
-	    qq = Dictionary()
-	    self.d = qq.get_dic()
+        qq = Dictionary()
+        self.d = qq.get_dic()
+        '''with codecs.open('dictionary.txt','rb','utf-8') as f:
+            content = f.readlines()
+
+        for n in content:
+            t = {}
+            temp = n.split('#')
+            temp.pop()
+            if len(temp) == 0:
+                continue
+            term = temp[0]
+            temp.pop(0)
+            count = 1
+            word = ''
+            for x in temp:
+                if count % 2 == 1:
+                    word = x
+                else:
+                    num = x.split('$')
+                    num.pop()
+                    num = list(map(int, num))
+                    t[word] = num
+                    word = ''
+                count = count + 1
+            self.d[term] = t'''
 
     def get_text(self,query):
         return self.pre_process(query)
@@ -37,6 +61,8 @@ class Analysis:
         for i in temp:
             ax.append(i)
             if i.lower() != 'and' and i.lower() != 'or' and i.lower() != 'not' and re.search('^/[0-9]+$',i) == None:
+                if i in self.d:
+                    continue
                 sam = jieba.lcut_for_search(i)
                 for j in sam:
                     if j != i:
@@ -85,51 +111,37 @@ class Analysis:
             return None,None
 
         last_answer = []
-        first_term = ''
+        temp_answer = []
 
         #進行字串檢索，找出符合條件的文章
         if len(result) != 0:
             if type(result[0]) == str:
-                return result,self.single_find(result[0])
+                return result,[self.single_find(result[0])]
             for i in result:
                 if i == result[0]:
-                    last_answer = self.choose(result[0])
+                    temp_answer = self.choose(result[0])
+                    if temp_answer == None or len(temp_answer) == 0:
+                        temp_answer = i[2]
                 else:
                     if re.search('^/[0-9]+$',i[1]) != None:
                         get = self.choose(i)
-                        if last_answer != None:
+                        if temp_answer != None:
                             if get != None:
-                                last_answer = self.choose([last_answer,'and',get])
+                                temp_answer = self.choose([temp_answer,'and',get])
                             else:
-                                last_answer = last_answer
+                                temp_answer = temp_answer
                         else:
-                            last_answer = get
+                            temp_answer = get
 
                     else:
-                        ccc = [last_answer,i[0],i[1]]
-                        last_answer = self.choose(ccc)
-                '''if i == result[0]:
-                    last_answer = choose(result[0])
-                else:
-                    if re.search('^/[0-9]+$',i[1]) != None:
-                        get = choose(i)
-                        if last_answer != None:
-                            if get != None:
-                                last_answer = choose([last_answer,'and',get])
-                            else:
-                                last_answer = last_answer
+                        if temp_answer != None and len(temp_answer) != 0:
+                            ccc = [temp_answer,i[0],i[1]]
+                            temp_answer = self.choose(ccc)
                         else:
-                            last_answer = get       
-                    else:
-                        if last_answer != None and len(last_answer) != 0:
-                            la = choose([last_answer,i[0],i[1]])
-                            if len(la) != 0:
-                                last_answer = la
-                        else:
-                            last_answer = choose([first_term,i[0],i[1]])
-                first_term = i[-1]'''
-            if last_answer == None or len(last_answer) == 0:
-                last_answer = self.single_find(result[0][0])
+                            temp_answer = i[1]
+            
+                if temp_answer != None and type(temp_answer) != str and len(temp_answer) != 0:
+                    last_answer.insert(0,temp_answer)
         else:
             last_answer = None
 
@@ -244,10 +256,46 @@ class Analysis:
             second = self.d[find_words[2]][cond]
             for i in first:
                 for j in second:
-                    if abs(i-j) <= number: #需再修正，/k是單字而非位置
+                    if abs(i-j) <= number: 
                         z.append(cond)
         if len(z) > 0:
             return sorted(z)
         else:
             return None
-        
+oo = Analysis()       
+
+while True:
+    find = input('請輸入要尋找的單字：')
+    if find == 'no':
+        break
+    w,answer = oo.get_text(find)
+
+    qword = ''
+
+    print (w)
+    print (answer)
+
+    #搜尋詞彙字典化
+    '''if w != None:
+        if type(w[0]) == str:
+            qword = w[0]
+        else:
+            for i in w:
+                for j in i:
+                    qword = qword + j + '@'
+                qword = qword[0:len(qword)-1]
+                qword = qword + '#'
+            qword = qword[0:len(qword)-1]'''
+
+    #顯示結果文章
+    if answer != None and len(answer) != 0:
+        print (qword)
+        '''with codecs.open('result.txt','w','utf-8') as f:
+            f.write(qword+'\n')
+            for i in answer:
+                print (i)
+                f.write(i+'\n')'''
+        for i in answer[0]:
+            print (i)
+    else:
+        print ('符合檢索條件檔案不存在')
