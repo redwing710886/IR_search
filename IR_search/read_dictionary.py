@@ -7,15 +7,15 @@ from make_dictionary import *
 class Analysis:
     
     d = {}
-
+    qq = Dictionary()
+    
     jieba.set_dictionary('dict.txt.big.txt')
     
     def __init__(self):
         self.read_dictionary()
     
     def read_dictionary(self):
-        qq = Dictionary()
-        self.d = qq.get_dic()
+        self.d = self.qq.get_dic()
         '''with codecs.open('dictionary.txt','rb','utf-8') as f:
             content = f.readlines()
 
@@ -116,7 +116,8 @@ class Analysis:
         #進行字串檢索，找出符合條件的文章
         if len(result) != 0:
             if type(result[0]) == str:
-                return result,[self.single_find(result[0])]
+                #return result,[self.single_find(result[0])]
+                return result,[self.qq.get_rank_sort(result[0])]
             for i in result:
                 if i == result[0]:
                     temp_answer = self.choose(result[0])
@@ -203,14 +204,16 @@ class Analysis:
         y = []
 
         if type(words[0]) == str:
-            for n in iter(self.d[words[0]]): 
-                x.append(n)
+            '''for n in iter(self.d[words[0]]): 
+                x.append(n)'''
+            x = self.qq.get_rank_sort(words[0])
         else:
             x = words[0]
 
         if type(words[2]) == str:
-            for n in iter(self.d[words[2]]): 
-                y.append(n)
+            '''for n in iter(self.d[words[2]]): 
+                y.append(n)'''
+            y = self.qq.get_rank_sort(words[2])
         else:
             y = words[2]
 
@@ -238,11 +241,11 @@ class Analysis:
     #有著and,or,not的搜尋
     def complex_find(self,x,y,mode):
         if mode == 'and':
-            return sorted(list((set(x).union(set(y)))^(set(x)^set(y))))
+            return list((set(x).union(set(y)))^(set(x)^set(y)))
         elif mode == 'or':
-            return sorted(list((set(x).union(set(y)))))
+            return list((set(x).union(set(y))))
         elif mode == 'not':
-            return sorted(list(set(x)^((set(x).union(set(y)))^(set(x)^set(y)))))
+            return list(set(x)^((set(x).union(set(y)))^(set(x)^set(y))))
         else:
             return None
 
@@ -251,51 +254,23 @@ class Analysis:
         number = int(distance[1:len(distance)])
         condidate = self.choose([find_words[0],'and',find_words[2]])
         z = []
+        vv = []
         for cond in condidate:
             first = self.d[find_words[0]][cond]
             second = self.d[find_words[2]][cond]
+            check_close = False
+            counter = 0
             for i in first:
                 for j in second:
                     if abs(i-j) <= number: 
-                        z.append(cond)
+                        check_close = True
+                        counter = counter + 1
+            if check_close:
+                vv.append([counter,cond])
+        vv.sort(reverse=True)
+        for i in vv:
+            z.append(i[1])
         if len(z) > 0:
-            return sorted(z)
+            return z
         else:
             return None
-oo = Analysis()       
-
-while True:
-    find = input('請輸入要尋找的單字：')
-    if find == 'no':
-        break
-    w,answer = oo.get_text(find)
-
-    qword = ''
-
-    print (w)
-    print (answer)
-
-    #搜尋詞彙字典化
-    '''if w != None:
-        if type(w[0]) == str:
-            qword = w[0]
-        else:
-            for i in w:
-                for j in i:
-                    qword = qword + j + '@'
-                qword = qword[0:len(qword)-1]
-                qword = qword + '#'
-            qword = qword[0:len(qword)-1]'''
-
-    #顯示結果文章
-    if answer != None and len(answer) != 0:
-        print (qword)
-        '''with codecs.open('result.txt','w','utf-8') as f:
-            f.write(qword+'\n')
-            for i in answer:
-                print (i)
-                f.write(i+'\n')'''
-        for i in answer[0]:
-            print (i)
-    else:
-        print ('符合檢索條件檔案不存在')
